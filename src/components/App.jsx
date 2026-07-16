@@ -526,9 +526,6 @@ function App() {
         <div className="main-card">
           <div className="app-header">
             <img src="/riskrangerlogo.png" alt="Risk Ranger" className="header-logo" />
-            <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px', marginBottom: '16px' }}>
-              Made for Alcea Surrogacy, © RME 2025 [v2.0]
-            </p>
           </div>
 
           {/* Action Buttons Row - matches NeoNearBy */}

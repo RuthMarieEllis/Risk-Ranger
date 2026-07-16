@@ -197,13 +197,6 @@ Be thorough and specific. Include actual numbers, measurements, and medical term
                 }}>
                   MFM
                 </div>
-                <div style={{
-                  fontSize: '14px',
-                  color: '#6b7280',
-                  marginBottom: '20px'
-                }}>
-                  Made for Alcea Surrogacy, © RME 2025 [v2.0]
-                </div>
               </div>
 
               {/* Action Buttons */}
