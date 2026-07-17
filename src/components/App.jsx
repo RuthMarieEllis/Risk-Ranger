@@ -229,15 +229,6 @@ function App() {
       return;
     }
 
-    // Detect if input is a question rather than candidate data
-    const trimmed = textInput.trim();
-    const isQuestion = trimmed.endsWith('?') ||
-      /^(what|how|why|when|does|is|are|can|will|would|which|who|where|should|do)\b/i.test(trimmed);
-    if (isQuestion) {
-      alert('It looks like you entered a question. Please enter candidate medical information (e.g. age, pregnancy history, medical conditions) to run an assessment.');
-      return;
-    }
-
     try {
       console.log('Starting analysis with cascading parser...');
 
@@ -276,6 +267,13 @@ function App() {
 
       // Perform risk assessment
       const assessment = performComprehensiveAssessment(candidateData);
+
+      // If no medical data was extracted (e.g. a question was asked instead of candidate info),
+      // don't show a misleading "all clinics accept" result
+      if (assessment.assessments.length === 0) {
+        setResults({ noData: true });
+        return;
+      }
 
       // Add candidate data to the assessment results so PDF can access it
       assessment.candidateData = candidateData;
@@ -789,6 +787,11 @@ function App() {
                 <p>Extracting medical information and performing risk assessment...</p>
               )}
               <div className="loading-spinner">⏳</div>
+            </div>
+          ) : results.noData ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280' }}>
+              <p style={{ fontSize: '16px', marginBottom: '8px' }}>No candidate data found.</p>
+              <p style={{ fontSize: '14px' }}>Please enter candidate medical information (e.g. age, pregnancy history, medical conditions) to run an assessment.</p>
             </div>
           ) : results.clinicTypeAnalysis && (
             <>
