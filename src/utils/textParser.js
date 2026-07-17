@@ -72,6 +72,7 @@ function extractPregnancyHistory(text) {
     /mom\s*of\s*(\d+)/i,
     /(\d+)\s*(?:previous|prior)\s*(?:deliveries|births|pregnancies)/i,
     /pregnant\s*(\d+)\s*times?/i,
+    /(\d+)\s+pregnanc(?:y|ies)/i,  // "5 pregnancies" (plain, e.g. in a question)
     /G(\d+)P(\d+)/i,  // G3P2 notation
     /been\s*pregnant/i,
     /was\s*pregnant/i,
