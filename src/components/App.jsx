@@ -229,6 +229,15 @@ function App() {
       return;
     }
 
+    // Detect if input is a question rather than candidate data
+    const trimmed = textInput.trim();
+    const isQuestion = trimmed.endsWith('?') ||
+      /^(what|how|why|when|does|is|are|can|will|would|which|who|where|should|do)\b/i.test(trimmed);
+    if (isQuestion) {
+      alert('It looks like you entered a question. Please enter candidate medical information (e.g. age, pregnancy history, medical conditions) to run an assessment.');
+      return;
+    }
+
     try {
       console.log('Starting analysis with cascading parser...');
 
