@@ -37,10 +37,10 @@ function extractAge(text) {
     if (match) {
       const age = parseInt(match[1], 10);
       // Validate age is reasonable for surrogacy (21-43 per ASRM guidelines)
-      if (age >= 21 && age <= 43) {
+      if (age >= 18 && age <= 55) {
         return age;
       } else {
-        console.warn(`Invalid age extracted: ${age}. Must be 21-43 for surrogacy. Ignoring.`);
+        console.warn(`Age extracted out of plausible range: ${age}. Ignoring.`);
         continue; // Try next pattern
       }
     }

@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     }
 
     // Build the prompt for Claude - COMPREHENSIVE VERSION
-    const prompt = `You are a medical record analyzer for gestational carrier (surrogate) screening. Parse the following medical records and extract ONLY factual information into a structured format.
+    const prompt = `You are a medical data extractor for gestational carrier (surrogate) screening. The input may be formal medical records, plain English descriptions, or questions containing medical data (e.g. "is a BMI of 35 ok?" or "she has had 5 pregnancies and GDM"). Extract ALL factual candidate data regardless of how it is phrased.
 
 IMPORTANT RULES:
 1. **ONLY extract CONFIRMED ACTIVE diagnoses** - Do NOT include:
@@ -51,7 +51,6 @@ IMPORTANT RULES:
    - Past resolved conditions (e.g., "history of asthma as child, resolved" - NOT active)
    - Conditions mentioned in background/review of systems without confirmation
    - Example: If record says "denies cardiac disease" or "no history of kidney disease" - DO NOT add these
-   - Example: If record mentions "IUGR" in context of monitoring or screening but NOT as diagnosed - DO NOT add it
 2. Count complications intelligently - group related issues together
    - Example: "hyperemesis + PICC line + TPN + hospitalization" = 1 complication (severe hyperemesis)
    - Example: "gastroparesis + severe GERD + gallstones in same pregnancy" = 1 complication (GI complications)
@@ -61,30 +60,19 @@ IMPORTANT RULES:
 4. Extract complications PER PREGNANCY, then count total unique complication types
 5. Do NOT make recommendations or predictions - just extract facts
 6. NOTE: Patient identifiers have been removed for privacy (HIPAA compliance)
+7. Extract age and BMI if mentioned anywhere in the input, including in question form (e.g. "is age 42 ok?" → age: 42, "BMI of 35" → bmi: 35)
 8. CRITICAL - Preterm labor/birth definition (READ CAREFULLY):
    - Preterm = delivery BEFORE 37 weeks gestational age ONLY
    - 37 weeks or later = FULL TERM (NOT preterm)
-   - YOU MUST CHECK THE ACTUAL DELIVERY GESTATIONAL AGE
-   - If delivery was at 38 weeks, 39 weeks, 40 weeks, 41 weeks = NOT PRETERM (do not add to complications)
-   - "Prolonged labor", "prodromal labor", "slow labor", "labor for 3 days", "spontaneous labor" = NOT preterm (these describe labor characteristics, not timing)
-   - Examples of FULL TERM (NOT preterm): "delivery at 38 weeks 5 days", "39 weeks 2 days", "40 weeks"
-   - Examples of PRETERM: "delivery at 35 weeks", "delivered at 34 weeks 6 days", "preterm birth at 32 weeks"
+   - "Prolonged labor", "prodromal labor", "slow labor" = NOT preterm
 9. CRITICAL - Membrane rupture (NOT complications):
-   - "Artificial rupture of membranes" (AROM) = ROUTINE PROCEDURE (NOT a complication)
-   - "Amniotomy" = ROUTINE PROCEDURE (NOT a complication)
-   - "Rupture of membranes with Pitocin" = ROUTINE INDUCTION PROCEDURE (NOT a complication)
-   - ONLY count as complication if PPROM (preterm premature rupture) BEFORE 37 weeks
-   - At term (37+ weeks), membrane rupture is normal and expected
+   - AROM, amniotomy, rupture of membranes with Pitocin = ROUTINE PROCEDURES (NOT complications)
+   - ONLY count as complication if PPROM before 37 weeks
 10. CRITICAL - Incomplete documentation:
-   - If records only document through a certain week (e.g., "records through 35 weeks") but don't include delivery records, this is INCOMPLETE
-   - Missing delivery/postpartum records should be noted as a documentation gap
-   - This affects clinic approval likelihood even if no complications are documented
+   - If records only document through a certain week but don't include delivery records, note as documentation gap
 ${contextSection}
-Medical Records:
+Input:
 ${deidentifiedText}
-
-FOCUS ON: We only need pregnancy/delivery history and pre-existing medical conditions from the records.
-DO NOT try to extract age, height, weight, or BMI from the medical records - those are entered separately by the user
 
 Return a JSON object with this EXACT structure (matches frontend expectations):
 {
@@ -114,7 +102,21 @@ Return a JSON object with this EXACT structure (matches frontend expectations):
   "pregnancySummary": "A detailed chronological narrative of each pregnancy separated by \\n\\n"
 }
 
-Return ONLY the JSON object, no other text`;
+Return ONLY the JSON object with this EXACT structure, no other text. If a field has no data, use null or empty array:
+{
+  "age": <number or null - extract if mentioned anywhere, even in a question>,
+  "bmi": <number or null - extract if mentioned anywhere, even in a question>,
+  "pregnancyHistory": {
+    "numberOfTermPregnancies": <number>,
+    "numberOfCesareans": <number>,
+    "numberOfComplications": <number>,
+    "complications": [{ "pregnancy": <number>, "category": "<hyperemesis|gi_complications|preeclampsia|gestational_diabetes|preterm_labor|placental_issues|hemorrhage|iugr|membrane_rupture|cholestasis|cerclage>", "description": "<brief>", "severity": "<mild|moderate|severe>" }]
+  },
+  "medicalConditions": ["<confirmed active chronic conditions only>"],
+  "surgicalHistory": ["<procedures>"],
+  "documentationGaps": ["<incomplete documentation issues>"],
+  "pregnancySummary": "<chronological narrative of pregnancies, blank line between each>"
+}`;
 
     // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
